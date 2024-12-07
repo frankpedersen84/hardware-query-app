@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hardware Query System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Hardware Query System</h1>
+        
+        <div class="query-section">
+            <h2>Ask a Question</h2>
+            <input type="text" id="query-input" placeholder="e.g., 'What is the IP address of camera Camp East?' or 'What is the shortcut for Camp East Classroom Door 109?'">
+            <button onclick="submitQuery()">Submit Query</button>
+        </div>
+
+        <div class="examples-section">
+            <h3>Example Questions:</h3>
+            <ul>
+                <li onclick="setExample(this.textContent)">What is the IP address of camera Camp East?</li>
+                <li onclick="setExample(this.textContent)">What is the shortcut for Camp East Classroom Door 109?</li>
+                <li onclick="setExample(this.textContent)">Show me all cameras in Unit 5</li>
+                <li onclick="setExample(this.textContent)">What is the firmware version of Camp East?</li>
+            </ul>
+        </div>
+
+        <div class="results-section">
+            <h2>Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        function setExample(text) {
+            document.getElementById('query-input').value = text;
+        }
+
+        async function submitQuery() {
+            const query = document.getElementById('query-input').value;
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                resultsDiv.innerHTML = '<p class="loading">Processing query...</p>';
+                
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query }),
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'error') {
+                    resultsDiv.innerHTML = `<p class="error">Error: ${data.message}</p>`;
+                } else {
+                    let resultsHtml = '<div class="query-info">';
+                    resultsHtml += `<p class="sql-query">SQL Query: <code>${data.query}</code></p>`;
+                    resultsHtml += '</div>';
+                    
+                    if (data.results.length === 0) {
+                        resultsHtml += '<p class="no-results">No results found</p>';
+                    } else {
+                        resultsHtml += '<div class="results-table">';
+                        resultsHtml += '<table>';
+                        
+                        // Table headers
+                        resultsHtml += '<tr>';
+                        for (const key of Object.keys(data.results[0])) {
+                            resultsHtml += `<th>${key}</th>`;
+                        }
+                        resultsHtml += '</tr>';
+                        
+                        // Table data
+                        for (const row of data.results) {
+                            resultsHtml += '<tr>';
+                            for (const value of Object.values(row)) {
+                                resultsHtml += `<td>${value || ''}</td>`;
+                            }
+                            resultsHtml += '</tr>';
+                        }
+                        
+                        resultsHtml += '</table>';
+                        resultsHtml += '</div>';
+                    }
+                    
+                    resultsDiv.innerHTML = resultsHtml;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Handle Enter key in the input field
+        document.getElementById('query-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitQuery();
+            }
+        });
+    </script>
+</body>
+</html>
