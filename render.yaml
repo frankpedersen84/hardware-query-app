@@ -3,15 +3,7 @@ services:
     name: hardware-query-app
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: cd /opt/render/project/src && python app.py
+    startCommand: gunicorn application:application
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: OPENAI_API_KEY
         sync: false
-      - key: PORT
-        value: 10000
-      - key: FLASK_ENV
-        value: production
-      - key: PYTHONUNBUFFERED
-        value: "true"
