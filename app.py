@@ -19,11 +19,19 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.config['ENV'] = 'production'
 app.config['DEBUG'] = False
 
+# Use an absolute path for the database
+DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
+
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 def get_table_schema():
     """Get the schema of all tables in the database"""
-    conn = sqlite3.connect('excel_data.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     schema = {}
@@ -80,7 +88,7 @@ Example queries:
         sql_query = response.choices[0].message.content.strip()
         
         # Execute the SQL query
-        conn = sqlite3.connect('excel_data.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(sql_query)
         columns = [description[0] for description in cursor.description]
