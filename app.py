@@ -54,7 +54,11 @@ def init_db():
 # Initialize database
 init_db()
 
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+# Initialize OpenAI client
+client = OpenAI(
+    api_key=os.getenv('OPENAI_API_KEY'),
+    base_url="https://api.openai.com/v1"  # Explicitly set the base URL
+)
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_PATH)
