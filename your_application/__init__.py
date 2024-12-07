@@ -106,23 +106,21 @@ Important notes:
 - Tables are linked by the Hardware and Name fields
 - Return ONLY the SQL query, no explanations"""
 
-        # Initialize OpenAI client without proxy settings
-        client = OpenAI(
-            api_key=os.getenv('OPENAI_API_KEY'),
-            base_url="https://api.openai.com/v1"  # Explicitly set the base URL
-        )
+        # Initialize OpenAI client without any extra settings
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
         
         # Make the API call
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0
             )
             sql_query = response.choices[0].message.content.strip()
         except Exception as e:
             print(f"OpenAI API Error: {str(e)}")
             return {"status": "error", "message": "Failed to process query"}
-
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(sql_query)
@@ -139,12 +137,9 @@ Important notes:
             "query": sql_query,
             "results": formatted_results
         }
-        
     except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }
+        print(f"Query processing error: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 @app.route('/')
 def home():
