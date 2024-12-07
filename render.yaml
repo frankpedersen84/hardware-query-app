@@ -3,7 +3,7 @@ services:
     name: hardware-query-app
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn your_application.wsgi:app
+    startCommand: gunicorn your_application.wsgi:application
     envVars:
       - key: OPENAI_API_KEY
         sync: false
