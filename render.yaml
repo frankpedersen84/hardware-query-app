@@ -2,12 +2,10 @@ services:
   - type: web
     name: hardware-query-app
     env: python
-    buildCommand: pip install -r requirements.txt && pip install -e .
-    startCommand: PYTHONPATH=$PYTHONPATH:/opt/render/project/src gunicorn run:app
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: OPENAI_API_KEY
         sync: false
-      - key: PYTHONPATH
-        value: /opt/render/project/src
