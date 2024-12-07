@@ -5,6 +5,7 @@ import json
 import os
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
+import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -21,6 +22,37 @@ app.config['DEBUG'] = False
 
 # Use an absolute path for the database
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
+
+def init_db():
+    """Initialize the database and create tables if they don't exist"""
+    if not os.path.exists(DATABASE_PATH):
+        conn = sqlite3.connect(DATABASE_PATH)
+        cursor = conn.cursor()
+        
+        # Create your tables here
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS hardware (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                ip_address TEXT,
+                shortcut TEXT,
+                firmware_version TEXT,
+                unit TEXT
+            )
+        ''')
+        
+        # Load initial data from Excel if needed
+        try:
+            df = pd.read_excel('hardware_data.xlsx')
+            df.to_sql('hardware', conn, if_exists='replace', index=False)
+        except Exception as e:
+            print(f"Warning: Could not load initial data: {e}")
+        
+        conn.commit()
+        conn.close()
+
+# Initialize database
+init_db()
 
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
