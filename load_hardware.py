@@ -41,6 +41,25 @@ def load_excel_to_db(excel_path, db_path='excel_data.db'):
         print(f"Error: {str(e)}")
         return False
 
+def generate_sample_excel():
+    import pandas as pd
+
+    # Sample hardware data
+    data = {
+        'name': ['Camera 1', 'Camera 2', 'Camera 3', 'DVR System', 'NVR System'],
+        'ip_address': ['192.168.1.100', '192.168.1.101', '192.168.1.102', '192.168.1.200', '192.168.1.201'],
+        'shortcut': ['CAM1', 'CAM2', 'CAM3', 'DVR1', 'NVR1'],
+        'firmware_version': ['v2.1.0', 'v2.1.0', 'v2.0.9', 'v3.2.1', 'v4.0.0'],
+        'unit': ['Main Building', 'Warehouse', 'Parking Lot', 'Security Room', 'IT Room']
+    }
+
+    # Create DataFrame
+    df = pd.DataFrame(data)
+
+    # Save to Excel file
+    df.to_excel('hardware_data.xlsx', index=False)
+    print("Created hardware_data.xlsx with sample data")
+
 if __name__ == "__main__":
     # Your Excel file path
     excel_path = r"C:\Users\Admin-Frankie\Desktop\hardware.xlsx"
@@ -51,3 +70,5 @@ if __name__ == "__main__":
     if success:
         print("\nYou can now use the database to query your hardware data!")
         print("The database file 'excel_data.db' has been created in the current directory.")
+        
+    generate_sample_excel()
