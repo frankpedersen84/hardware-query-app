@@ -158,5 +158,9 @@ def query():
     return jsonify(result)
 
 if __name__ == '__main__':
+    print("Starting Flask application...")
+    print(f"Current directory: {os.getcwd()}")
+    print(f"Files in directory: {os.listdir('.')}")
     port = int(os.environ.get('PORT', 10000))
+    print(f"Starting server on port {port}")
     app.run(host='0.0.0.0', port=port)

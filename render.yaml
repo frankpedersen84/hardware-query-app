@@ -3,7 +3,7 @@ services:
     name: hardware-query-app
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: cd /opt/render/project/src && python app.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -13,3 +13,5 @@ services:
         value: 10000
       - key: FLASK_ENV
         value: production
+      - key: PYTHONUNBUFFERED
+        value: "true"
