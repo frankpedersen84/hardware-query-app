@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from openai import OpenAI
+import openai
 import sqlite3
 import json
 import os
@@ -19,6 +19,9 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Configure for production
 app.config['ENV'] = 'production'
 app.config['DEBUG'] = False
+
+# Configure OpenAI
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Use an absolute path for the database
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
@@ -53,9 +56,6 @@ def init_db():
 
 # Initialize database
 init_db()
-
-# Initialize OpenAI client with minimal settings
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_PATH)
@@ -113,12 +113,13 @@ Example queries:
    SELECT c.Shortcut FROM Cameras c WHERE c.Name = 'Camp East Classroom Door 109';"""
 
         # Get SQL query from GPT
-        response = client.chat.completions.create(
+        response = openai.Completion.create(
             model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
+            prompt=prompt,
+            max_tokens=2048
         )
         
-        sql_query = response.choices[0].message.content.strip()
+        sql_query = response.choices[0].text.strip()
         
         # Execute the SQL query
         conn = get_db_connection()
