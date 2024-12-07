@@ -13,7 +13,9 @@ load_dotenv()
 if not os.getenv('OPENAI_API_KEY'):
     raise ValueError("OPENAI_API_KEY must be set in .env file")
 
-app = Flask(__name__)
+app = Flask(__name__, 
+           template_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates'),
+           static_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static'))
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # Configure for production
@@ -41,7 +43,8 @@ def init_db():
         ''')
         
         try:
-            df = pd.read_excel('hardware_data.xlsx')
+            excel_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'hardware_data.xlsx')
+            df = pd.read_excel(excel_path)
             df.to_sql('hardware', conn, if_exists='replace', index=False)
         except Exception as e:
             print(f"Warning: Could not load initial data: {e}")
