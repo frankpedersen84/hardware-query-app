@@ -22,35 +22,45 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.config['ENV'] = 'production'
 app.config['DEBUG'] = False
 
-# Use an absolute path for the database
+# Use absolute paths for both database and Excel file
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'hardware.db')
+EXCEL_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'hardware_data.xlsx')
 
 def init_db():
     """Initialize the database and create tables if they don't exist"""
-    if not os.path.exists(DATABASE_PATH):
-        conn = sqlite3.connect(DATABASE_PATH)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS hardware (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                ip_address TEXT,
-                shortcut TEXT,
-                firmware_version TEXT,
-                unit TEXT
-            )
-        ''')
-        
-        try:
-            excel_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'hardware_data.xlsx')
-            df = pd.read_excel(excel_path)
-            df.to_sql('hardware', conn, if_exists='replace', index=False)
-        except Exception as e:
-            print(f"Warning: Could not load initial data: {e}")
-        
-        conn.commit()
-        conn.close()
+    try:
+        if not os.path.exists(DATABASE_PATH):
+            conn = sqlite3.connect(DATABASE_PATH)
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS hardware (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    ip_address TEXT,
+                    shortcut TEXT,
+                    firmware_version TEXT,
+                    unit TEXT
+                )
+            ''')
+            
+            # Only try to load Excel data if the file exists
+            if os.path.exists(EXCEL_PATH):
+                try:
+                    df = pd.read_excel(EXCEL_PATH)
+                    df.to_sql('hardware', conn, if_exists='replace', index=False)
+                    print(f"Successfully loaded data from {EXCEL_PATH}")
+                except Exception as e:
+                    print(f"Warning: Could not load Excel data: {e}")
+            else:
+                print(f"Note: Excel file not found at {EXCEL_PATH}. Using existing database if available.")
+            
+            conn.commit()
+            conn.close()
+        else:
+            print(f"Using existing database at {DATABASE_PATH}")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE_PATH)

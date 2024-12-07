@@ -1,0 +1,6 @@
+Name,IP Address,Shortcut,Firmware Version,Unit
+Camera 1,192.168.1.100,CAM1,v2.1.0,Main Building
+Camera 2,192.168.1.101,CAM2,v2.1.0,Warehouse
+Camera 3,192.168.1.102,CAM3,v2.0.9,Parking Lot
+DVR System,192.168.1.200,DVR1,v3.2.1,Security Room
+NVR System,192.168.1.201,NVR1,v4.0.0,IT Room
