@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from openai import OpenAI
+import openai
 import sqlite3
 import json
 import os
@@ -21,6 +21,9 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 # Configure for production
 app.config['ENV'] = 'production'
 app.config['DEBUG'] = False
+
+# Configure OpenAI
+openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Use absolute paths for both database and Excel file
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'hardware.db')
@@ -106,9 +109,6 @@ Important notes:
 - Tables are linked by the Hardware and Name fields
 - Return ONLY the SQL query, no explanations"""
 
-        # Configure OpenAI API key
-        openai.api_key = os.getenv('OPENAI_API_KEY')
-        
         # Make the API call
         try:
             response = openai.ChatCompletion.create(
