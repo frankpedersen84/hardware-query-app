@@ -88,24 +88,27 @@ Important notes:
 - The Cameras table contains camera information with columns:
   * Name (e.g., 'Camp East Classroom Door 109')
   * Hardware (links to Hardware.Name)
-  * Shortcut (numeric code)
   * Address (URL)
-- The CameraGeneralSettings table contains camera settings with columns:
-  * Hardware (links to Hardware.Name)
-  * Camera (links to Cameras.Name)
-  * Setting (setting name)
-  * Value (setting value)
-- Tables are linked by these relationships:
+- Common patterns in the data:
+  * Hardware names include IP in parentheses: 'Camp East (10.101.112.109)'
+  * Camera names are descriptive: 'Camp East Classroom Door 109'
+  * Addresses are full URLs: 'http://10.101.112.109/'
+- Tables are linked by:
   * Cameras.Hardware = Hardware.Name
   * CameraGeneralSettings.Camera = Cameras.Name
-  * CameraGeneralSettings.Hardware = Hardware.Name
-- Some common queries:
-  * "What is the IP address of camera Camp East?" →
-    SELECT REPLACE(REPLACE(Address, 'http://', ''), '/', '') 
+- Example queries:
+  * "What is the IP address of Camp East?" →
+    SELECT REPLACE(REPLACE(Address, 'http://', ''), '/', '') as IP 
     FROM Hardware 
-    WHERE Name LIKE '%Camp East%';
-  * "What is the shortcut for Camp East Classroom Door 109?" →
-    SELECT Shortcut FROM Cameras WHERE Name = 'Camp East Classroom Door 109';"""
+    WHERE Name LIKE 'Camp East (%';
+  * "Show me all cameras in Camp East" →
+    SELECT c.Name 
+    FROM Cameras c 
+    WHERE c.Hardware LIKE 'Camp East (%';
+  * "What is the firmware version of Camp East?" →
+    SELECT FirmwareVersion 
+    FROM Hardware 
+    WHERE Name LIKE 'Camp East (%';"""
 
         # Make the API call
         try:
