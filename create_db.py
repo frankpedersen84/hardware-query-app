@@ -14,8 +14,11 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
         # Read Excel file
         excel_file = pd.ExcelFile(excel_path)
         
+        # Skip Sheet1 and process only the real data sheets
+        real_sheets = [sheet for sheet in excel_file.sheet_names if sheet != 'Sheet1']
+        
         # Process each sheet
-        for sheet_name in excel_file.sheet_names:
+        for sheet_name in real_sheets:
             print(f"\nProcessing sheet: {sheet_name}")
             df = pd.read_excel(excel_file, sheet_name)
             
@@ -23,7 +26,7 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
             df.columns = [col.strip().replace(' ', '_') for col in df.columns]
             
             # Create table name from sheet name
-            table_name = ''.join(c if c.isalnum() else '_' for c in sheet_name)
+            table_name = sheet_name
             
             # Print schema information
             print(f"Creating table '{table_name}' with columns:")
@@ -32,10 +35,6 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
             
             # Save to database
             df.to_sql(table_name, conn, if_exists='replace', index=False)
-            
-            # Print sample data
-            print("\nSample data (first 2 rows):")
-            print(df.head(2))
             
             # Print row count
             print(f"\nTotal rows in {table_name}: {len(df)}")
@@ -52,7 +51,7 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
         
     except Exception as e:
         print(f"Error: {str(e)}")
-        if conn:
+        if 'conn' in locals():
             conn.close()
         return False
 
