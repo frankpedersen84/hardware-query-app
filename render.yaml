@@ -30,51 +30,10 @@ services:
       
       # Verify database
       echo "Verifying database..."
-      python - <<EOF
-      import sqlite3
-      import os
-      
-      def check_database():
-          try:
-              print("\nDatabase Verification:")
-              print("Current directory:", os.getcwd())
-              print("Files in directory:", os.listdir())
-              
-              conn = sqlite3.connect('hardware.db')
-              cursor = conn.cursor()
-              
-              # Check tables
-              cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-              tables = cursor.fetchall()
-              print("\nTables found:", len(tables))
-              
-              for table in tables:
-                  table_name = table[0]
-                  cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
-                  count = cursor.fetchone()[0]
-                  print(f"\n{table_name}:")
-                  print(f"  - Rows: {count}")
-                  
-                  cursor.execute(f"PRAGMA table_info({table_name})")
-                  columns = cursor.fetchall()
-                  print(f"  - Columns: {len(columns)}")
-                  
-                  if count == 0:
-                      print("  WARNING: Table is empty!")
-              
-              conn.close()
-              return True
-              
-          except Exception as e:
-              print(f"Error verifying database: {str(e)}")
-              return False
-      
-      if not check_database():
-          exit(1)
-      EOF
+      python check_db.py
     startCommand: |
       echo "=== STARTING APPLICATION ==="
-      bash startup.sh
+      gunicorn app:app --bind 0.0.0.0:$PORT --log-file logs/gunicorn.log --access-logfile logs/access.log --error-logfile logs/error.log --capture-output --enable-stdio-inheritance
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
