@@ -3,6 +3,7 @@ import sqlite3
 import os
 
 def create_and_load_database(excel_path, db_path='hardware.db'):
+    print(f"\n=== Database Creation Process ===")
     print(f"Reading Excel file from: {excel_path}")
     print(f"Creating database at: {db_path}")
     
@@ -13,6 +14,9 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
         
         # Read Excel file
         excel_file = pd.ExcelFile(excel_path)
+        print(f"\nAvailable sheets in Excel:")
+        for sheet in excel_file.sheet_names:
+            print(f"  - {sheet}")
         
         # Process each sheet
         for sheet_name in excel_file.sheet_names:
@@ -20,10 +24,10 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
             df = pd.read_excel(excel_file, sheet_name)
             
             # Clean column names (remove spaces, special chars)
-            df.columns = [col.strip().replace(' ', '_') for col in df.columns]
+            df.columns = [col.strip().lower().replace(' ', '_').replace('-', '_') for col in df.columns]
             
-            # Create table name from sheet name
-            table_name = sheet_name.replace(' ', '_')
+            # Create table name from sheet name (clean it up)
+            table_name = sheet_name.strip().lower().replace(' ', '_').replace('-', '_')
             
             # Print schema information
             print(f"Creating table '{table_name}' with columns:")
@@ -33,8 +37,19 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
             # Save to database
             df.to_sql(table_name, conn, if_exists='replace', index=False)
             
-            # Print row count
-            print(f"\nTotal rows in {table_name}: {len(df)}")
+            # Verify table creation
+            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            row_count = cursor.fetchone()[0]
+            print(f"Verified table '{table_name}' with {row_count} rows")
+        
+        # Print final database state
+        print("\nFinal Database Tables:")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+        tables = cursor.fetchall()
+        for table in tables:
+            cursor.execute(f"SELECT COUNT(*) FROM {table[0]}")
+            count = cursor.fetchone()[0]
+            print(f"  - {table[0]} ({count} rows)")
         
         # Create backup of database
         backup_path = f"{db_path}.backup"
@@ -47,7 +62,7 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
         return True
         
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Error during database creation: {str(e)}")
         if 'conn' in locals():
             conn.close()
         return False

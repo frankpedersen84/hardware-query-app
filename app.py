@@ -176,11 +176,64 @@ def home():
 
 @app.route('/query', methods=['POST'])
 def query():
-    """Handle natural language query"""
-    data = request.get_json()
-    if not data or 'query' not in data:
-        return jsonify({"status": "error", "message": "No query provided"})
-    return jsonify(process_natural_language_query(data['query']))
+    try:
+        user_query = request.json.get('query', '')
+        print(f"\nProcessing query: {user_query}")
+
+        # Get current database schema
+        with sqlite3.connect(DATABASE_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+            tables = cursor.fetchall()
+            schema_context = []
+            print("\nCurrent Database Schema:")
+            for table in tables:
+                table_name = table[0]
+                cursor.execute(f"PRAGMA table_info({table_name})")
+                columns = cursor.fetchall()
+                column_names = [col[1] for col in columns]
+                print(f"  Table '{table_name}': {', '.join(column_names)}")
+                schema_context.append(f"Table '{table_name}' with columns: {', '.join(column_names)}")
+
+        # Create the system message with schema context
+        system_message = f"""You are a SQL query generator. Convert natural language queries into SQL based on this schema:
+{chr(10).join(schema_context)}
+Return ONLY the SQL query, nothing else."""
+
+        print("\nGenerating SQL query...")
+        completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_query}
+            ],
+            temperature=0
+        )
+        
+        sql_query = completion.choices[0].message.content.strip()
+        print(f"Generated SQL: {sql_query}")
+
+        # Execute the query
+        with sqlite3.connect(DATABASE_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(sql_query)
+            results = cursor.fetchall()
+            if cursor.description:  # If we have results
+                columns = [col[0] for col in cursor.description]
+                formatted_results = [dict(zip(columns, row)) for row in results]
+                print(f"Query returned {len(formatted_results)} results")
+                return jsonify({"results": formatted_results})
+            else:
+                return jsonify({"message": "Query executed successfully but returned no results"})
+
+    except sqlite3.Error as e:
+        error_msg = f"Query processing error: {str(e)}"
+        print(error_msg)
+        return jsonify({"error": error_msg}), 200
+    except Exception as e:
+        error_msg = f"Error: {str(e)}"
+        print(error_msg)
+        return jsonify({"error": error_msg}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
