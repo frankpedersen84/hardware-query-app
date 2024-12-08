@@ -2,10 +2,15 @@ services:
   - type: web
     name: hardware-query-app
     env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    buildCommand: |
+      pip install -r requirements.txt
+      chmod +x startup.sh
+    startCommand: ./startup.sh
     envVars:
       - key: OPENAI_API_KEY
         sync: false
       - key: PYTHONPATH
         value: .
+    assets:
+      - path: /opt/render/project/src/hardware.xlsx
+        source: C:/Users/Admin-Frankie/Desktop/hardware.xlsx

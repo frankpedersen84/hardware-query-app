@@ -57,5 +57,10 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
         return False
 
 if __name__ == "__main__":
-    excel_path = r"C:\Users\Admin-Frankie\Desktop\hardware.xlsx"
+    # In production (Render), use the deployed Excel file
+    if os.environ.get('RENDER'):
+        excel_path = "/opt/render/project/src/hardware.xlsx"
+    else:
+        excel_path = r"C:\Users\Admin-Frankie\Desktop\hardware.xlsx"
+    
     create_and_load_database(excel_path)
