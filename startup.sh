@@ -3,11 +3,14 @@
 # Initialize the database
 python create_db.py
 
-# Start the application
+# Create logs directory
+mkdir -p logs
+
+# Start the application with logging
 echo "Starting application..."
 echo "Current directory: $(pwd)"
 echo "Listing files:"
 ls -la
 
 echo "Starting gunicorn..."
-gunicorn app:app
+exec gunicorn app:app 2>&1 | tee -a logs/gunicorn.log

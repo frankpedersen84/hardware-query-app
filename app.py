@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
 from create_db import create_and_load_database
+from logging_config import setup_logging
 
 # Load environment variables
 load_dotenv()
@@ -31,32 +32,34 @@ else:
     DATABASE_PATH = 'hardware.db'
     EXCEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware_data.xlsx')
 
+logger = setup_logging('app.log')
+
 # Initialize database on startup
 if os.environ.get('RENDER'):
-    print("Running on Render, checking Excel file...")
+    logger.info("Running on Render, checking Excel file...")
     excel_path = "/opt/render/project/src/hardware_data.xlsx"
     if os.path.exists(excel_path):
-        print(f"Excel file found at {excel_path}")
-        print(f"File size: {os.path.getsize(excel_path)} bytes")
+        logger.info(f"Excel file found at {excel_path}")
+        logger.info(f"File size: {os.path.getsize(excel_path)} bytes")
     else:
-        print(f"Excel file NOT found at {excel_path}")
-        print("Listing directory contents:")
-        print(os.listdir("/opt/render/project/src/"))
+        logger.error(f"Excel file NOT found at {excel_path}")
+        logger.info("Listing directory contents:")
+        logger.info(os.listdir("/opt/render/project/src/"))
 else:
     excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware_data.xlsx')
-    
-print(f"Initializing database from {excel_path}")
+
+logger.info(f"Initializing database from {excel_path}")
 success = create_and_load_database(excel_path, DATABASE_PATH)
 if success:
-    print("Database initialized successfully")
+    logger.info("Database initialized successfully")
     # Print all tables in the database
     with sqlite3.connect(DATABASE_PATH) as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
         tables = cursor.fetchall()
-        print("Tables in database:", [table[0] for table in tables])
+        logger.info("Tables in database: %s", [table[0] for table in tables])
 else:
-    print("Failed to initialize database")
+    logger.error("Failed to initialize database")
 
 def get_db_connection():
     """Get a connection to the database"""
@@ -137,7 +140,7 @@ Important notes:
                 temperature=0
             )
             sql_query = response.choices[0].message.content.strip()
-            print(f"Generated SQL query: {sql_query}")  # Debug print
+            logger.info(f"Generated SQL query: {sql_query}")  # Debug print
             
             # Execute the query
             conn = get_db_connection()
@@ -159,14 +162,14 @@ Important notes:
             }
             
         except sqlite3.Error as e:
-            print(f"Database error: {str(e)}")
+            logger.error(f"Database error: {str(e)}")
             return {"status": "error", "message": f"Database error: {str(e)}"}
         except Exception as e:
-            print(f"OpenAI API Error: {str(e)}")
+            logger.error(f"OpenAI API Error: {str(e)}")
             return {"status": "error", "message": f"OpenAI API error: {str(e)}"}
             
     except Exception as e:
-        print(f"Query processing error: {str(e)}")
+        logger.error(f"Query processing error: {str(e)}")
         return {"status": "error", "message": f"Query processing error: {str(e)}"}
 
 @app.route('/')
@@ -178,7 +181,7 @@ def home():
 def query():
     try:
         user_query = request.json.get('query', '')
-        print(f"\nProcessing query: {user_query}")
+        logger.info(f"\nProcessing query: {user_query}")
 
         # Get current database schema
         with sqlite3.connect(DATABASE_PATH) as conn:
@@ -186,13 +189,13 @@ def query():
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
             tables = cursor.fetchall()
             schema_context = []
-            print("\nCurrent Database Schema:")
+            logger.info("\nCurrent Database Schema:")
             for table in tables:
                 table_name = table[0]
                 cursor.execute(f"PRAGMA table_info({table_name})")
                 columns = cursor.fetchall()
                 column_names = [col[1] for col in columns]
-                print(f"  Table '{table_name}': {', '.join(column_names)}")
+                logger.info(f"  Table '{table_name}': {', '.join(column_names)}")
                 schema_context.append(f"Table '{table_name}' with columns: {', '.join(column_names)}")
 
         # Create the system message with schema context
@@ -200,7 +203,7 @@ def query():
 {chr(10).join(schema_context)}
 Return ONLY the SQL query, nothing else."""
 
-        print("\nGenerating SQL query...")
+        logger.info("\nGenerating SQL query...")
         completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -211,7 +214,7 @@ Return ONLY the SQL query, nothing else."""
         )
         
         sql_query = completion.choices[0].message.content.strip()
-        print(f"Generated SQL: {sql_query}")
+        logger.info(f"Generated SQL: {sql_query}")
 
         # Execute the query
         with sqlite3.connect(DATABASE_PATH) as conn:
@@ -221,18 +224,18 @@ Return ONLY the SQL query, nothing else."""
             if cursor.description:  # If we have results
                 columns = [col[0] for col in cursor.description]
                 formatted_results = [dict(zip(columns, row)) for row in results]
-                print(f"Query returned {len(formatted_results)} results")
+                logger.info(f"Query returned {len(formatted_results)} results")
                 return jsonify({"results": formatted_results})
             else:
                 return jsonify({"message": "Query executed successfully but returned no results"})
 
     except sqlite3.Error as e:
         error_msg = f"Query processing error: {str(e)}"
-        print(error_msg)
+        logger.error(error_msg, exc_info=True)
         return jsonify({"error": error_msg}), 200
     except Exception as e:
         error_msg = f"Error: {str(e)}"
-        print(error_msg)
+        logger.error(error_msg, exc_info=True)
         return jsonify({"error": error_msg}), 200
 
 if __name__ == '__main__':
