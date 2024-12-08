@@ -42,5 +42,5 @@ logs/
 *.db
 *.db.backup
 
-# Excel files (comment out if you want to include them in git)
-# *.xlsx
+# Excel files 
+!hardware_data.xlsx

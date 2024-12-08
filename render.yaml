@@ -6,8 +6,14 @@ services:
     repo: https://github.com/frankpedersen84/hardware-query-app
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt && chmod +x start.sh && chmod +x prestart.sh
-    startCommand: gunicorn wsgi_app:application -c gunicorn.conf.py
+    buildCommand: |
+      pip install -r requirements.txt
+      chmod +x start.sh
+      chmod +x prestart.sh
+      cp hardware_data.xlsx /opt/render/project/src/
+    startCommand: |
+      python init_db.py
+      gunicorn wsgi_app:application -c gunicorn.conf.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10
