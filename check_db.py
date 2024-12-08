@@ -1,34 +1,31 @@
 import sqlite3
 
-def check_tables():
+def check_database():
+    print("\n=== Database Check ===")
     conn = sqlite3.connect('hardware.db')
     cursor = conn.cursor()
     
-    # Get all tables
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    # Check tables
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables = cursor.fetchall()
-    
-    print("Tables in database:")
+    print("\nTables in database:")
     for table in tables:
-        table_name = table[0]
-        print(f"\nTable: {table_name}")
+        cursor.execute(f"SELECT COUNT(*) FROM {table[0]}")
+        count = cursor.fetchone()[0]
+        print(f"\n=== {table[0]} ({count} rows) ===")
         
         # Get schema
-        cursor.execute(f"PRAGMA table_info({table_name})")
+        cursor.execute(f"PRAGMA table_info({table[0]})")
         columns = cursor.fetchall()
-        print("Columns:")
-        for col in columns:
-            print(f"  {col[1]} ({col[2]})")
+        print("Columns:", [col[1] for col in columns])
         
-        # Get sample data
-        cursor.execute(f"SELECT * FROM {table_name} LIMIT 2")
+        # Print first few rows
+        cursor.execute(f"SELECT * FROM {table[0]} LIMIT 3")
         rows = cursor.fetchall()
-        if rows:
-            print("\nSample data:")
-            for row in rows:
-                print(row)
+        for row in rows:
+            print(row)
     
     conn.close()
 
 if __name__ == "__main__":
-    check_tables()
+    check_database()

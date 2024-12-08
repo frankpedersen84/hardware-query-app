@@ -7,7 +7,6 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -19,22 +18,29 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 
 # Virtual Environment
 venv/
+env/
 ENV/
 
-# Database files
-*.db
-*.db.backup
-*.sqlite3
-
-# IDE specific files
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Database
+*.db
+*.db.backup
+
+# Excel files (comment out if you want to include them in git)
+# *.xlsx

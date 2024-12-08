@@ -1,16 +1,19 @@
 #!/bin/bash
 
-# Initialize the database
-python create_db.py
-
 # Create logs directory
 mkdir -p logs
 
-# Start the application with logging
+# Print environment info
 echo "Starting application..."
 echo "Current directory: $(pwd)"
-echo "Listing files:"
+echo "Python version: $(python --version)"
+echo "Directory contents:"
 ls -la
 
-echo "Starting gunicorn..."
-exec gunicorn app:app 2>&1 | tee -a logs/gunicorn.log
+# Initialize the database
+echo "Initializing database..."
+python create_db.py
+
+# Start the application
+echo "Starting Flask application..."
+gunicorn app:app --bind 0.0.0.0:$PORT --log-file logs/gunicorn.log --access-logfile logs/access.log --error-logfile logs/error.log

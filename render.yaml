@@ -3,48 +3,79 @@ services:
     name: hardware-query-app
     env: python
     buildCommand: |
-      echo "=== DEPLOYMENT VERIFICATION (v2) ==="
+      echo "=== BUILD PHASE ==="
+      # Install dependencies
       pip install -r requirements.txt
+      
+      # Setup environment
+      echo "Setting up environment..."
+      echo "Python version: $(python --version)"
       echo "Current directory: $(pwd)"
-      echo "Listing files:"
-      ls -la
-      echo "Copying hardware_data.xlsx..."
-      cp hardware_data.xlsx /opt/render/project/src/
-      echo "Verifying copy:"
-      ls -la /opt/render/project/src/hardware_data.xlsx
       mkdir -p /opt/render/project/src/logs
       chmod 777 /opt/render/project/src/logs
-    startCommand: |
-      echo "=== STARTING APPLICATION (v2) ==="
-      echo "Current directory: $(pwd)"
-      echo "Listing directory contents:"
-      ls -la
+      
+      # Copy and verify Excel file
+      echo "Copying hardware_data.xlsx..."
+      cp hardware_data.xlsx /opt/render/project/src/
+      if [ -f "/opt/render/project/src/hardware_data.xlsx" ]; then
+        echo "Excel file copied successfully"
+        ls -l /opt/render/project/src/hardware_data.xlsx
+      else
+        echo "ERROR: Excel file copy failed"
+        exit 1
+      fi
+      
+      # Initialize database
       echo "Creating database..."
       python create_db.py
-      echo "Database created, checking tables..."
+      
+      # Verify database
+      echo "Verifying database..."
       python - <<EOF
       import sqlite3
       import os
-      print("Current directory:", os.getcwd())
-      print("Files in directory:", os.listdir())
-      conn = sqlite3.connect('hardware.db')
-      cursor = conn.cursor()
-      cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-      tables = cursor.fetchall()
-      print("\nTables in database:", [table[0] for table in tables])
-      for table in tables:
-          cursor.execute(f"PRAGMA table_info({table[0]})")
-          columns = cursor.fetchall()
-          print(f"\nTable {table[0]} columns:")
-          for col in columns:
-              print(f"  {col[1]} ({col[2]})")
-          cursor.execute(f"SELECT COUNT(*) FROM {table[0]}")
-          count = cursor.fetchone()[0]
-          print(f"  Row count: {count}")
-      conn.close()
+      
+      def check_database():
+          try:
+              print("\nDatabase Verification:")
+              print("Current directory:", os.getcwd())
+              print("Files in directory:", os.listdir())
+              
+              conn = sqlite3.connect('hardware.db')
+              cursor = conn.cursor()
+              
+              # Check tables
+              cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+              tables = cursor.fetchall()
+              print("\nTables found:", len(tables))
+              
+              for table in tables:
+                  table_name = table[0]
+                  cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                  count = cursor.fetchone()[0]
+                  print(f"\n{table_name}:")
+                  print(f"  - Rows: {count}")
+                  
+                  cursor.execute(f"PRAGMA table_info({table_name})")
+                  columns = cursor.fetchall()
+                  print(f"  - Columns: {len(columns)}")
+                  
+                  if count == 0:
+                      print("  WARNING: Table is empty!")
+              
+              conn.close()
+              return True
+              
+          except Exception as e:
+              print(f"Error verifying database: {str(e)}")
+              return False
+      
+      if not check_database():
+          exit 1
       EOF
-      echo "Starting gunicorn..."
-      gunicorn app:app
+    startCommand: |
+      echo "=== STARTING APPLICATION ==="
+      bash startup.sh
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
@@ -52,6 +83,8 @@ services:
         value: 10000
       - key: OPENAI_API_KEY
         sync: false
+      - key: RENDER
+        value: true
     assets:
       - path: /opt/render/project/src/hardware.xlsx
         source: C:/Users/Admin-Frankie/Desktop/hardware.xlsx
