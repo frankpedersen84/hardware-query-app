@@ -34,6 +34,13 @@ else:
 print(f"Initializing database from Excel file: {EXCEL_PATH}")
 if create_and_load_database(EXCEL_PATH, DATABASE_PATH):
     print("Database initialized successfully")
+    # Print table names
+    conn = sqlite3.connect(DATABASE_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+    tables = cursor.fetchall()
+    print("Tables in database:", [table[0] for table in tables])
+    conn.close()
 else:
     print("Failed to initialize database")
 
@@ -57,15 +64,6 @@ def get_table_schema():
         cursor.execute(f"PRAGMA table_info({table_name});")
         columns = cursor.fetchall()
         schema[table_name] = [col[1] for col in columns]
-        
-        # Get sample data
-        cursor.execute(f"SELECT * FROM {table_name} LIMIT 1")
-        sample = cursor.fetchone()
-        if sample:
-            sample_dict = {}
-            for i, col in enumerate(columns):
-                sample_dict[col[1]] = sample[i]
-            schema[f"{table_name}_sample"] = sample_dict
     
     conn.close()
     return schema
@@ -77,13 +75,8 @@ def process_natural_language_query(query):
         
         schema_context = "Database tables and their columns:\n"
         for table_name, columns in schema.items():
-            if not table_name.endswith('_sample'):
-                schema_context += f"\nTable '{table_name}':\n"
-                schema_context += "Columns: " + ", ".join(columns) + "\n"
-                if f"{table_name}_sample" in schema:
-                    schema_context += "Sample data:\n"
-                    for col, val in schema[f"{table_name}_sample"].items():
-                        schema_context += f"  {col}: {val}\n"
+            schema_context += f"\nTable '{table_name}':\n"
+            schema_context += "Columns: " + ", ".join(columns) + "\n"
         
         prompt = f"""Given this database schema:
 {schema_context}
@@ -98,25 +91,16 @@ Important notes:
   * Address (e.g., 'http://10.101.112.109/')
   * Model (e.g., 'Pelco IMM12027')
   * FirmwareVersion (e.g., '2.10.0.13.8360-A0.0')
-- The Cameras table contains camera information with columns:
-  * Name (e.g., 'Camp East Classroom Door 109')
-  * Hardware (links to Hardware.Name)
-  * Address (e.g., 'http://10.101.112.109/')
-  * Channel (numeric)
-- Common patterns in the data:
-  * Hardware names include IP: 'Camp East (10.101.112.109)'
-  * Camera names are descriptive: 'Camp East Classroom Door 109'
-  * Addresses are full URLs: 'http://10.101.112.109/'
 - Example queries:
   * "What is the IP address of Camp East?" →
     SELECT REPLACE(REPLACE(Address, 'http://', ''), '/', '') as IP 
     FROM Hardware 
     WHERE Name LIKE 'Camp East%';
   * "Show me all cameras in Camp East" →
-    SELECT Name, Channel
-    FROM Cameras 
-    WHERE Hardware LIKE 'Camp East%'
-    ORDER BY Channel;
+    SELECT c.Name, c.Channel
+    FROM Cameras c
+    WHERE c.Hardware LIKE 'Camp East%'
+    ORDER BY c.Channel;
   * "What is the firmware version of Camp East?" →
     SELECT FirmwareVersion 
     FROM Hardware 
@@ -173,14 +157,16 @@ Important notes:
 
 @app.route('/')
 def home():
+    """Render the home page"""
     return render_template('index.html')
 
 @app.route('/query', methods=['POST'])
 def query():
+    """Handle natural language query"""
     data = request.get_json()
-    query = data.get('query', '')
-    result = process_natural_language_query(query)
-    return jsonify(result)
+    if not data or 'query' not in data:
+        return jsonify({"status": "error", "message": "No query provided"})
+    return jsonify(process_natural_language_query(data['query']))
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))

@@ -14,11 +14,8 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
         # Read Excel file
         excel_file = pd.ExcelFile(excel_path)
         
-        # Skip Sheet1 and process only the real data sheets
-        real_sheets = [sheet for sheet in excel_file.sheet_names if sheet != 'Sheet1']
-        
         # Process each sheet
-        for sheet_name in real_sheets:
+        for sheet_name in excel_file.sheet_names:
             print(f"\nProcessing sheet: {sheet_name}")
             df = pd.read_excel(excel_file, sheet_name)
             
@@ -26,7 +23,7 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
             df.columns = [col.strip().replace(' ', '_') for col in df.columns]
             
             # Create table name from sheet name
-            table_name = sheet_name
+            table_name = sheet_name.replace(' ', '_')
             
             # Print schema information
             print(f"Creating table '{table_name}' with columns:")
@@ -60,6 +57,6 @@ if __name__ == "__main__":
     if os.environ.get('RENDER'):
         excel_path = "/opt/render/project/src/hardware.xlsx"
     else:
-        excel_path = r"C:\Users\Admin-Frankie\Desktop\hardware.xlsx"
+        excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.xlsx')
     
     create_and_load_database(excel_path)
