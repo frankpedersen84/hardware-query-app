@@ -7,7 +7,7 @@ services:
     plan: free
     region: oregon
     buildCommand: pip install -r requirements.txt && chmod +x prestart.sh
-    startCommand: bash -c 'source $GUNICORN_CMD_ARGS="--config gunicorn.conf.py" && exec gunicorn wsgi:app'
+    startCommand: bash -c './prestart.sh && exec gunicorn wsgi_app:application'
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10
