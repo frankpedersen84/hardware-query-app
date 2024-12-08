@@ -81,19 +81,31 @@ Convert this natural language query to SQL:
 
 Important notes:
 - Return ONLY the SQL query, no explanations
-- The Hardware table contains device information with Name, Address, Model, etc.
-- The Cameras table contains camera information with Name, ShortName, Hardware, etc.
-- The CameraGeneralSettings table contains camera settings
-- Tables are linked by the following relationships:
+- The Hardware table contains device information with columns:
+  * Name (e.g., 'Camp East (10.101.112.109)')
+  * Address (e.g., 'http://10.101.112.109/')
+  * Model, FirmwareVersion, etc.
+- The Cameras table contains camera information with columns:
+  * Name (e.g., 'Camp East Classroom Door 109')
+  * Hardware (links to Hardware.Name)
+  * Shortcut (numeric code)
+  * Address (URL)
+- The CameraGeneralSettings table contains camera settings with columns:
+  * Hardware (links to Hardware.Name)
+  * Camera (links to Cameras.Name)
+  * Setting (setting name)
+  * Value (setting value)
+- Tables are linked by these relationships:
   * Cameras.Hardware = Hardware.Name
   * CameraGeneralSettings.Camera = Cameras.Name
   * CameraGeneralSettings.Hardware = Hardware.Name
-- Use JOIN operations when needed to combine data from multiple tables
 - Some common queries:
   * "What is the IP address of camera Camp East?" →
-    SELECT h.Address FROM Hardware h WHERE h.Name LIKE '%Camp East%';
+    SELECT REPLACE(REPLACE(Address, 'http://', ''), '/', '') 
+    FROM Hardware 
+    WHERE Name LIKE '%Camp East%';
   * "What is the shortcut for Camp East Classroom Door 109?" →
-    SELECT c.Shortcut FROM Cameras c WHERE c.Name = 'Camp East Classroom Door 109';"""
+    SELECT Shortcut FROM Cameras WHERE Name = 'Camp East Classroom Door 109';"""
 
         # Make the API call
         try:
