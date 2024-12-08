@@ -7,7 +7,7 @@ services:
     plan: free
     region: oregon
     buildCommand: pip install -r requirements.txt && chmod +x prestart.sh
-    startCommand: bash -c './prestart.sh && exec gunicorn app:app --bind 0.0.0.0:$PORT --log-file /var/log/gunicorn.log --access-logfile /var/log/access.log --error-logfile /var/log/error.log --capture-output --enable-stdio-inheritance'
+    startCommand: ./prestart.sh && gunicorn wsgi:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10
