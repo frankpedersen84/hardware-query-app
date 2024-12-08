@@ -55,8 +55,8 @@ def create_and_load_database(excel_path, db_path='hardware.db'):
 if __name__ == "__main__":
     # In production (Render), use the deployed Excel file
     if os.environ.get('RENDER'):
-        excel_path = "/opt/render/project/src/hardware.xlsx"
+        excel_path = "/opt/render/project/src/hardware_data.xlsx"
     else:
-        excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.xlsx')
+        excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware_data.xlsx')
     
     create_and_load_database(excel_path)

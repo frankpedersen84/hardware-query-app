@@ -7,10 +7,10 @@ services:
       echo "Current directory: $(pwd)"
       echo "Listing files:"
       ls -la
-      echo "Copying hardware.xlsx..."
-      cp hardware.xlsx /opt/render/project/src/
+      echo "Copying hardware_data.xlsx..."
+      cp hardware_data.xlsx /opt/render/project/src/
       echo "Verifying copy:"
-      ls -la /opt/render/project/src/hardware.xlsx
+      ls -la /opt/render/project/src/hardware_data.xlsx
       chmod +x startup.sh
     startCommand: ./startup.sh
     envVars:

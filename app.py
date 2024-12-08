@@ -23,17 +23,18 @@ app.config['DEBUG'] = False
 # Configure OpenAI
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-# Use absolute paths for database and Excel file
-DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
+# Set paths based on environment
 if os.environ.get('RENDER'):
-    EXCEL_PATH = "/opt/render/project/src/hardware.xlsx"
+    DATABASE_PATH = '/opt/render/project/src/hardware.db'
+    EXCEL_PATH = '/opt/render/project/src/hardware_data.xlsx'
 else:
-    EXCEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.xlsx')
+    DATABASE_PATH = 'hardware.db'
+    EXCEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware_data.xlsx')
 
 # Initialize database on startup
 if os.environ.get('RENDER'):
     print("Running on Render, checking Excel file...")
-    excel_path = "/opt/render/project/src/hardware.xlsx"
+    excel_path = "/opt/render/project/src/hardware_data.xlsx"
     if os.path.exists(excel_path):
         print(f"Excel file found at {excel_path}")
         print(f"File size: {os.path.getsize(excel_path)} bytes")
@@ -42,7 +43,7 @@ if os.environ.get('RENDER'):
         print("Listing directory contents:")
         print(os.listdir("/opt/render/project/src/"))
 else:
-    excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.xlsx')
+    excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware_data.xlsx')
     
 print(f"Initializing database from {excel_path}")
 success = create_and_load_database(excel_path, DATABASE_PATH)
