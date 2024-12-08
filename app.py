@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-import openai
+from openai import OpenAI
 import sqlite3
 import json
 import os
@@ -20,7 +20,7 @@ app.config['ENV'] = 'production'
 app.config['DEBUG'] = False
 
 # Configure OpenAI
-openai.api_key = os.getenv('OPENAI_API_KEY')
+client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 # Use absolute paths for database
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
@@ -99,16 +99,16 @@ Important notes:
   * "What is the IP address of Camp East?" →
     SELECT REPLACE(REPLACE(Address, 'http://', ''), '/', '') as IP 
     FROM Hardware 
-    WHERE Name LIKE 'Camp East (%';
+    WHERE Name LIKE 'Camp East%';
   * "Show me all cameras in Camp East" →
-    SELECT Name 
+    SELECT Name, Channel
     FROM Cameras 
-    WHERE Hardware LIKE 'Camp East (%'
+    WHERE Hardware LIKE 'Camp East%'
     ORDER BY Channel;
   * "What is the firmware version of Camp East?" →
     SELECT FirmwareVersion 
     FROM Hardware 
-    WHERE Name LIKE 'Camp East (%';
+    WHERE Name LIKE 'Camp East%';
   * "Show me all cameras in Unit 5" →
     SELECT c.Name, c.Channel
     FROM Cameras c
@@ -117,39 +117,47 @@ Important notes:
 
         # Make the API call
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": prompt},
+                    {"role": "system", "content": "You are a SQL expert. Generate only SQL queries without any explanations or comments."},
+                    {"role": "user", "content": prompt},
                     {"role": "user", "content": query}
                 ],
                 temperature=0
             )
-            sql_query = response['choices'][0]['message']['content'].strip()
+            sql_query = response.choices[0].message.content.strip()
             print(f"Generated SQL query: {sql_query}")  # Debug print
+            
+            # Execute the query
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(sql_query)
+            columns = [description[0] for description in cursor.description]
+            results = cursor.fetchall()
+            conn.close()
+            
+            # Format results
+            formatted_results = []
+            for row in results:
+                formatted_results.append(dict(zip(columns, row)))
+                
+            return {
+                "status": "success",
+                "query": sql_query,
+                "results": formatted_results
+            }
+            
+        except sqlite3.Error as e:
+            print(f"Database error: {str(e)}")
+            return {"status": "error", "message": f"Database error: {str(e)}"}
         except Exception as e:
             print(f"OpenAI API Error: {str(e)}")
-            return {"status": "error", "message": "Failed to process query"}
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(sql_query)
-        columns = [description[0] for description in cursor.description]
-        results = cursor.fetchall()
-        conn.close()
-        
-        formatted_results = []
-        for row in results:
-            formatted_results.append(dict(zip(columns, row)))
+            return {"status": "error", "message": f"OpenAI API error: {str(e)}"}
             
-        return {
-            "status": "success",
-            "query": sql_query,
-            "results": formatted_results
-        }
     except Exception as e:
         print(f"Query processing error: {str(e)}")
-        return {"status": "error", "message": str(e)}
+        return {"status": "error", "message": f"Query processing error: {str(e)}"}
 
 @app.route('/')
 def home():
