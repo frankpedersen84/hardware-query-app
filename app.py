@@ -5,7 +5,6 @@ import json
 import os
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
-import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -24,7 +23,7 @@ app.config['DEBUG'] = False
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Use absolute paths for database
-DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'excel_data.db')
+DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
 
 def get_db_connection():
     """Get a connection to the database"""
@@ -46,6 +45,12 @@ def get_table_schema():
         cursor.execute(f"PRAGMA table_info({table_name});")
         columns = cursor.fetchall()
         schema[table_name] = [col[1] for col in columns]
+        
+        # Get sample data
+        cursor.execute(f"SELECT * FROM {table_name} LIMIT 1")
+        sample = cursor.fetchone()
+        if sample:
+            schema[f"{table_name}_sample"] = dict(zip(schema[table_name], sample))
     
     conn.close()
     return schema
@@ -55,9 +60,15 @@ def process_natural_language_query(query):
     try:
         schema = get_table_schema()
         
-        schema_context = "Database tables and columns:\n"
-        for table, columns in schema.items():
-            schema_context += f"Table '{table}': {', '.join(columns)}\n"
+        schema_context = "Database tables and their columns:\n"
+        for table_name, columns in schema.items():
+            if not table_name.endswith('_sample'):
+                schema_context += f"\nTable '{table_name}':\n"
+                schema_context += "Columns: " + ", ".join(columns) + "\n"
+                if f"{table_name}_sample" in schema:
+                    schema_context += "Sample data:\n"
+                    for col, val in schema[f"{table_name}_sample"].items():
+                        schema_context += f"  {col}: {val}\n"
         
         prompt = f"""Given this database schema:
 {schema_context}
@@ -66,7 +77,10 @@ Convert this natural language query to SQL:
 "{query}"
 
 Important notes:
-- Return ONLY the SQL query, no explanations"""
+- Return ONLY the SQL query, no explanations
+- The tables contain hardware and camera information
+- Hardware and camera details are linked by Name fields
+- Use JOIN operations when needed to combine data from multiple tables"""
 
         # Make the API call
         try:
