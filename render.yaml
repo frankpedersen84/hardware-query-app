@@ -7,7 +7,7 @@ services:
       pip install -r requirements.txt
       chmod +x prestart.sh
     startCommand: |
-      ./prestart.sh
+      ./prestart.sh && \
       gunicorn app:app --bind 0.0.0.0:$PORT --log-file /var/log/gunicorn.log --access-logfile /var/log/access.log --error-logfile /var/log/error.log --capture-output --enable-stdio-inheritance
     envVars:
       - key: PYTHON_VERSION
@@ -16,6 +16,8 @@ services:
         sync: false
       - key: RENDER
         value: "true"
+      - key: PORT
+        value: "10000"
     healthCheckPath: /
     buildFilter:
       paths:
