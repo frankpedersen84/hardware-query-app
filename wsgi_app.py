@@ -1,4 +1,6 @@
-from app import app
+from app import app as application
 
 # This is the only WSGI entry point
-application = app
+
+if __name__ == "__main__":
+    application.run()
