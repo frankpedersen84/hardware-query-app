@@ -23,7 +23,7 @@ app.config['DEBUG'] = False
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Use absolute paths for database
-DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
+DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'excel_data.db')
 
 def get_db_connection():
     """Get a connection to the database"""
