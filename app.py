@@ -114,7 +114,10 @@ Important notes:
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
+                messages=[
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": query}
+                ],
                 temperature=0
             )
             sql_query = response['choices'][0]['message']['content'].strip()
