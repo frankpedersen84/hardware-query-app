@@ -27,9 +27,9 @@ var/
 venv/
 ENV/
 
-# Database
+# Database files
 *.db
-!excel_data.db
+*.db.backup
 *.sqlite3
 
 # IDE specific files

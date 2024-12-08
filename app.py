@@ -23,7 +23,7 @@ app.config['DEBUG'] = False
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
 # Use absolute paths for database
-DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'excel_data.db')
+DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
 
 def get_db_connection():
     """Get a connection to the database"""
@@ -81,8 +81,8 @@ Convert this natural language query to SQL:
 
 Important notes:
 - Return ONLY the SQL query, no explanations
-- The Cameras table contains camera information with Name, Shortcut, Hardware, etc.
 - The Hardware table contains device information with Name, Address, Model, etc.
+- The Cameras table contains camera information with Name, ShortName, Hardware, etc.
 - The CameraGeneralSettings table contains camera settings
 - Tables are linked by the following relationships:
   * Cameras.Hardware = Hardware.Name
