@@ -1,12 +1,12 @@
 #!/bin/bash
 
-echo "=== STARTUP SCRIPT ==="
+echo "=== PRE-START SCRIPT ==="
 echo "Current directory: $(pwd)"
 echo "Python version: $(python --version)"
 
 # Create logs directory
-mkdir -p logs
-chmod 777 logs
+mkdir -p /var/log
+chmod 777 /var/log
 
 # Verify Excel file
 echo "Checking Excel file..."
@@ -26,6 +26,4 @@ python create_db.py
 echo "Verifying database..."
 python check_db.py
 
-# Start the application
-echo "Starting Flask application..."
-gunicorn app:app --bind 0.0.0.0:${PORT:-10000} --log-file logs/gunicorn.log --access-logfile logs/access.log --error-logfile logs/error.log --capture-output --enable-stdio-inheritance
+echo "Pre-start script completed"

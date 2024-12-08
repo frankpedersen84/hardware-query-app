@@ -2,44 +2,27 @@ services:
   - type: web
     name: hardware-query-app
     env: python
+    plan: free
     buildCommand: |
-      echo "=== BUILD PHASE ==="
-      # Install dependencies
       pip install -r requirements.txt
-      
-      # Setup environment
-      echo "Setting up environment..."
-      echo "Python version: $(python --version)"
-      echo "Current directory: $(pwd)"
-      mkdir -p /opt/render/project/src/logs
-      chmod 777 /opt/render/project/src/logs
-      
-      # Copy and verify Excel file
-      echo "Copying hardware_data.xlsx..."
-      if [ -f "hardware_data.xlsx" ]; then
-        echo "Excel file exists in source"
-        ls -l hardware_data.xlsx
-      else
-        echo "ERROR: Excel file not found in source"
-        exit 1
-      fi
-      
-      # Initialize database
-      echo "Creating database..."
-      python create_db.py
-      
-      # Verify database
-      echo "Verifying database..."
-      python check_db.py
+      chmod +x prestart.sh
     startCommand: |
-      echo "=== STARTING APPLICATION ==="
-      gunicorn app:app --bind 0.0.0.0:$PORT --log-file logs/gunicorn.log --access-logfile logs/access.log --error-logfile logs/error.log --capture-output --enable-stdio-inheritance
+      ./prestart.sh
+      gunicorn app:app --bind 0.0.0.0:$PORT --log-file /var/log/gunicorn.log --access-logfile /var/log/access.log --error-logfile /var/log/error.log --capture-output --enable-stdio-inheritance
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.0
-      - key: PORT
-        value: 10000
+        value: 3.11.10
       - key: OPENAI_API_KEY
         sync: false
       - key: RENDER
-        value: true
+        value: "true"
+    healthCheckPath: /
+    buildFilter:
+      paths:
+        - requirements.txt
+        - "**/*.py"
+        - "**/*.html"
+        - "**/*.css"
+        - "**/*.js"
+        - hardware_data.xlsx
+        - prestart.sh
