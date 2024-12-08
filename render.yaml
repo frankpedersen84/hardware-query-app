@@ -7,7 +7,7 @@ services:
     plan: free
     region: oregon
     buildCommand: pip install -r requirements.txt && chmod +x prestart.sh && chmod +x startup.sh
-    startCommand: bash -c 'chmod +x prestart.sh && chmod +x startup.sh && ./prestart.sh && exec gunicorn wsgi:app'
+    startCommand: bash -c 'chmod +x prestart.sh && chmod +x startup.sh && ./prestart.sh && exec gunicorn'
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10
