@@ -4,6 +4,7 @@ services:
     env: python
     buildCommand: |
       pip install -r requirements.txt
+      cp hardware.xlsx /opt/render/project/src/
       chmod +x startup.sh
     startCommand: ./startup.sh
     envVars:

@@ -5,6 +5,7 @@ import json
 import os
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
+from create_db import create_and_load_database
 
 # Load environment variables
 load_dotenv()
@@ -22,8 +23,19 @@ app.config['DEBUG'] = False
 # Configure OpenAI
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-# Use absolute paths for database
+# Use absolute paths for database and Excel file
 DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.db')
+if os.environ.get('RENDER'):
+    EXCEL_PATH = "/opt/render/project/src/hardware.xlsx"
+else:
+    EXCEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.xlsx')
+
+# Initialize database on startup
+print(f"Initializing database from Excel file: {EXCEL_PATH}")
+if create_and_load_database(EXCEL_PATH, DATABASE_PATH):
+    print("Database initialized successfully")
+else:
+    print("Failed to initialize database")
 
 def get_db_connection():
     """Get a connection to the database"""
