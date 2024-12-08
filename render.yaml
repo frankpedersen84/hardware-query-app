@@ -6,8 +6,8 @@ services:
     repo: https://github.com/frankpedersen84/hardware-query-app
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt && chmod +x prestart.sh
-    startCommand: bash -c 'source /opt/render/project/src/.venv/bin/activate && chmod +x prestart.sh && ./prestart.sh && exec gunicorn wsgi:app --bind=0.0.0.0:$PORT'
+    buildCommand: pip install -r requirements.txt && chmod +x prestart.sh && chmod +x startup.sh
+    startCommand: bash -c 'chmod +x prestart.sh && chmod +x startup.sh && ./prestart.sh && exec gunicorn wsgi:app'
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10
@@ -17,13 +17,3 @@ services:
         value: "true"
       - key: PORT
         value: "10000"
-    healthCheckPath: /
-    buildFilter:
-      paths:
-        - requirements.txt
-        - "**/*.py"
-        - "**/*.html"
-        - "**/*.css"
-        - "**/*.js"
-        - hardware_data.xlsx
-        - prestart.sh

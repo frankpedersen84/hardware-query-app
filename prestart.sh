@@ -4,26 +4,22 @@ echo "=== PRE-START SCRIPT ==="
 echo "Current directory: $(pwd)"
 echo "Python version: $(python --version)"
 
-# Create logs directory
-mkdir -p /var/log
-chmod 777 /var/log
+# Create logs directory if it doesn't exist
+mkdir -p logs
+chmod 777 logs
 
-# Verify Excel file
-echo "Checking Excel file..."
-if [ -f "hardware_data.xlsx" ]; then
-    echo "Excel file exists"
-    ls -l hardware_data.xlsx
-else
-    echo "ERROR: Excel file not found!"
+# Verify Excel file exists
+if [ ! -f "hardware_data.xlsx" ]; then
+    echo "Error: hardware_data.xlsx not found!"
     exit 1
 fi
 
 # Initialize database
-echo "Creating database..."
+echo "Initializing database..."
 python create_db.py
 
 # Verify database
 echo "Verifying database..."
 python check_db.py
 
-echo "Pre-start script completed"
+echo "Pre-start completed successfully"
