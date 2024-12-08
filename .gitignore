@@ -29,6 +29,7 @@ ENV/
 
 # Database
 *.db
+!excel_data.db
 *.sqlite3
 
 # IDE specific files
