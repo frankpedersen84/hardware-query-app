@@ -3,6 +3,7 @@ services:
     name: hardware-query-app
     env: python
     buildCommand: |
+      echo "=== DEPLOYMENT VERIFICATION (v1) ==="
       pip install -r requirements.txt
       echo "Current directory: $(pwd)"
       echo "Listing files:"
@@ -15,6 +16,7 @@ services:
       chmod 777 /opt/render/project/src/logs
       chmod +x startup.sh
     startCommand: |
+      echo "=== STARTING APPLICATION (v1) ==="
       python create_db.py
       echo "Database created, checking tables..."
       python - <<EOF
