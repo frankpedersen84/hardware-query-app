@@ -7,7 +7,7 @@ services:
     plan: free
     region: oregon
     buildCommand: pip install -r requirements.txt && chmod +x prestart.sh
-    startCommand: ./prestart.sh && gunicorn wsgi:app
+    startCommand: bash -c 'source /opt/render/project/src/.venv/bin/activate && chmod +x prestart.sh && ./prestart.sh && exec gunicorn wsgi:app --bind=0.0.0.0:$PORT'
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10

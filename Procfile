@@ -1,1 +1,1 @@
-web: gunicorn your_application.wsgi:application
+web: bash -c './prestart.sh && exec gunicorn wsgi:app'
