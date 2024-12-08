@@ -31,16 +31,29 @@ else:
     EXCEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.xlsx')
 
 # Initialize database on startup
-print(f"Initializing database from Excel file: {EXCEL_PATH}")
-if create_and_load_database(EXCEL_PATH, DATABASE_PATH):
+if os.environ.get('RENDER'):
+    print("Running on Render, checking Excel file...")
+    excel_path = "/opt/render/project/src/hardware.xlsx"
+    if os.path.exists(excel_path):
+        print(f"Excel file found at {excel_path}")
+        print(f"File size: {os.path.getsize(excel_path)} bytes")
+    else:
+        print(f"Excel file NOT found at {excel_path}")
+        print("Listing directory contents:")
+        print(os.listdir("/opt/render/project/src/"))
+else:
+    excel_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hardware.xlsx')
+    
+print(f"Initializing database from {excel_path}")
+success = create_and_load_database(excel_path, DATABASE_PATH)
+if success:
     print("Database initialized successfully")
-    # Print table names
-    conn = sqlite3.connect(DATABASE_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-    tables = cursor.fetchall()
-    print("Tables in database:", [table[0] for table in tables])
-    conn.close()
+    # Print all tables in the database
+    with sqlite3.connect(DATABASE_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+        tables = cursor.fetchall()
+        print("Tables in database:", [table[0] for table in tables])
 else:
     print("Failed to initialize database")
 

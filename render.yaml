@@ -4,7 +4,13 @@ services:
     env: python
     buildCommand: |
       pip install -r requirements.txt
+      echo "Current directory: $(pwd)"
+      echo "Listing files:"
+      ls -la
+      echo "Copying hardware.xlsx..."
       cp hardware.xlsx /opt/render/project/src/
+      echo "Verifying copy:"
+      ls -la /opt/render/project/src/hardware.xlsx
       chmod +x startup.sh
     startCommand: ./startup.sh
     envVars:

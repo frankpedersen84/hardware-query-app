@@ -4,4 +4,10 @@
 python create_db.py
 
 # Start the application
-exec gunicorn app:app
+echo "Starting application..."
+echo "Current directory: $(pwd)"
+echo "Listing files:"
+ls -la
+
+echo "Starting gunicorn..."
+gunicorn app:app
