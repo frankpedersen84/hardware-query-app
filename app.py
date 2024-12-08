@@ -84,31 +84,36 @@ Important notes:
 - The Hardware table contains device information with columns:
   * Name (e.g., 'Camp East (10.101.112.109)')
   * Address (e.g., 'http://10.101.112.109/')
-  * Model, FirmwareVersion, etc.
+  * Model (e.g., 'Pelco IMM12027')
+  * FirmwareVersion (e.g., '2.10.0.13.8360-A0.0')
 - The Cameras table contains camera information with columns:
   * Name (e.g., 'Camp East Classroom Door 109')
   * Hardware (links to Hardware.Name)
-  * Address (URL)
+  * Address (e.g., 'http://10.101.112.109/')
+  * Channel (numeric)
 - Common patterns in the data:
-  * Hardware names include IP in parentheses: 'Camp East (10.101.112.109)'
+  * Hardware names include IP: 'Camp East (10.101.112.109)'
   * Camera names are descriptive: 'Camp East Classroom Door 109'
   * Addresses are full URLs: 'http://10.101.112.109/'
-- Tables are linked by:
-  * Cameras.Hardware = Hardware.Name
-  * CameraGeneralSettings.Camera = Cameras.Name
 - Example queries:
   * "What is the IP address of Camp East?" →
     SELECT REPLACE(REPLACE(Address, 'http://', ''), '/', '') as IP 
     FROM Hardware 
     WHERE Name LIKE 'Camp East (%';
   * "Show me all cameras in Camp East" →
-    SELECT c.Name 
-    FROM Cameras c 
-    WHERE c.Hardware LIKE 'Camp East (%';
+    SELECT Name 
+    FROM Cameras 
+    WHERE Hardware LIKE 'Camp East (%'
+    ORDER BY Channel;
   * "What is the firmware version of Camp East?" →
     SELECT FirmwareVersion 
     FROM Hardware 
-    WHERE Name LIKE 'Camp East (%';"""
+    WHERE Name LIKE 'Camp East (%';
+  * "Show me all cameras in Unit 5" →
+    SELECT c.Name, c.Channel
+    FROM Cameras c
+    WHERE c.Hardware LIKE 'Unit 5%'
+    ORDER BY c.Channel;"""
 
         # Make the API call
         try:
