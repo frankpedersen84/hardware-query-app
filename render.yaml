@@ -3,7 +3,7 @@ services:
     name: hardware-query-app
     env: python
     buildCommand: |
-      echo "=== DEPLOYMENT VERIFICATION (v1) ==="
+      echo "=== DEPLOYMENT VERIFICATION (v2) ==="
       pip install -r requirements.txt
       echo "Current directory: $(pwd)"
       echo "Listing files:"
@@ -14,27 +14,37 @@ services:
       ls -la /opt/render/project/src/hardware_data.xlsx
       mkdir -p /opt/render/project/src/logs
       chmod 777 /opt/render/project/src/logs
-      chmod +x startup.sh
     startCommand: |
-      echo "=== STARTING APPLICATION (v1) ==="
+      echo "=== STARTING APPLICATION (v2) ==="
+      echo "Current directory: $(pwd)"
+      echo "Listing directory contents:"
+      ls -la
+      echo "Creating database..."
       python create_db.py
       echo "Database created, checking tables..."
       python - <<EOF
       import sqlite3
+      import os
+      print("Current directory:", os.getcwd())
+      print("Files in directory:", os.listdir())
       conn = sqlite3.connect('hardware.db')
       cursor = conn.cursor()
       cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
       tables = cursor.fetchall()
-      print("Tables in database:", [table[0] for table in tables])
+      print("\nTables in database:", [table[0] for table in tables])
       for table in tables:
           cursor.execute(f"PRAGMA table_info({table[0]})")
           columns = cursor.fetchall()
           print(f"\nTable {table[0]} columns:")
           for col in columns:
               print(f"  {col[1]} ({col[2]})")
+          cursor.execute(f"SELECT COUNT(*) FROM {table[0]}")
+          count = cursor.fetchone()[0]
+          print(f"  Row count: {count}")
       conn.close()
       EOF
-      gunicorn app:app 2>&1 | tee -a /opt/render/project/src/logs/gunicorn.log
+      echo "Starting gunicorn..."
+      gunicorn app:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
@@ -42,8 +52,6 @@ services:
         value: 10000
       - key: OPENAI_API_KEY
         sync: false
-      - key: PYTHONPATH
-        value: .
     assets:
       - path: /opt/render/project/src/hardware.xlsx
         source: C:/Users/Admin-Frankie/Desktop/hardware.xlsx
