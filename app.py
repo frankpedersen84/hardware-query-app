@@ -50,7 +50,10 @@ def get_table_schema():
         cursor.execute(f"SELECT * FROM {table_name} LIMIT 1")
         sample = cursor.fetchone()
         if sample:
-            schema[f"{table_name}_sample"] = dict(zip(schema[table_name], sample))
+            sample_dict = {}
+            for i, col in enumerate(columns):
+                sample_dict[col[1]] = sample[i]
+            schema[f"{table_name}_sample"] = sample_dict
     
     conn.close()
     return schema
@@ -78,9 +81,19 @@ Convert this natural language query to SQL:
 
 Important notes:
 - Return ONLY the SQL query, no explanations
-- The tables contain hardware and camera information
-- Hardware and camera details are linked by Name fields
-- Use JOIN operations when needed to combine data from multiple tables"""
+- The Cameras table contains camera information with Name, Shortcut, Hardware, etc.
+- The Hardware table contains device information with Name, Address, Model, etc.
+- The CameraGeneralSettings table contains camera settings
+- Tables are linked by the following relationships:
+  * Cameras.Hardware = Hardware.Name
+  * CameraGeneralSettings.Camera = Cameras.Name
+  * CameraGeneralSettings.Hardware = Hardware.Name
+- Use JOIN operations when needed to combine data from multiple tables
+- Some common queries:
+  * "What is the IP address of camera Camp East?" →
+    SELECT h.Address FROM Hardware h WHERE h.Name LIKE '%Camp East%';
+  * "What is the shortcut for Camp East Classroom Door 109?" →
+    SELECT c.Shortcut FROM Cameras c WHERE c.Name = 'Camp East Classroom Door 109';"""
 
         # Make the API call
         try:
@@ -90,6 +103,7 @@ Important notes:
                 temperature=0
             )
             sql_query = response['choices'][0]['message']['content'].strip()
+            print(f"Generated SQL query: {sql_query}")  # Debug print
         except Exception as e:
             print(f"OpenAI API Error: {str(e)}")
             return {"status": "error", "message": "Failed to process query"}
