@@ -183,25 +183,44 @@ def query():
         user_query = request.json.get('query', '')
         logger.info(f"\nProcessing query: {user_query}")
 
-        # Get current database schema
+        # Get current database schema and data samples
         with sqlite3.connect(DATABASE_PATH) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
             tables = cursor.fetchall()
             schema_context = []
-            logger.info("\nCurrent Database Schema:")
+            logger.info("\nCurrent Database Schema and Samples:")
             for table in tables:
                 table_name = table[0]
                 cursor.execute(f"PRAGMA table_info({table_name})")
                 columns = cursor.fetchall()
                 column_names = [col[1] for col in columns]
-                logger.info(f"  Table '{table_name}': {', '.join(column_names)}")
-                schema_context.append(f"Table '{table_name}' with columns: {', '.join(column_names)}")
+                
+                # Get row count and sample data
+                cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+                row_count = cursor.fetchone()[0]
+                cursor.execute(f"SELECT * FROM {table_name} LIMIT 3")
+                sample_rows = cursor.fetchall()
+                
+                logger.info(f"\nTable '{table_name}':")
+                logger.info(f"  Columns: {', '.join(column_names)}")
+                logger.info(f"  Total rows: {row_count}")
+                logger.info("  Sample data:")
+                for row in sample_rows:
+                    logger.info(f"    {dict(zip(column_names, row))}")
+                
+                schema_context.append(f"Table '{table_name}' ({row_count} rows) with columns: {', '.join(column_names)}")
 
         # Create the system message with schema context
         system_message = f"""You are a SQL query generator. Convert natural language queries into SQL based on this schema:
 {chr(10).join(schema_context)}
-Return ONLY the SQL query, nothing else."""
+
+Important notes:
+- Return ONLY the SQL query, no explanations
+- Make column names case-sensitive
+- Use LIKE with wildcards for partial matches
+- For name searches, use LIKE '%name%' to match partial names
+"""
 
         logger.info("\nGenerating SQL query...")
         completion = client.chat.completions.create(
@@ -224,13 +243,16 @@ Return ONLY the SQL query, nothing else."""
             if cursor.description:  # If we have results
                 columns = [col[0] for col in cursor.description]
                 formatted_results = [dict(zip(columns, row)) for row in results]
-                logger.info(f"Query returned {len(formatted_results)} results")
+                logger.info(f"Query returned {len(formatted_results)} results:")
+                for result in formatted_results:
+                    logger.info(f"  {result}")
                 return jsonify({"results": formatted_results})
             else:
+                logger.info("Query executed successfully but returned no results")
                 return jsonify({"message": "Query executed successfully but returned no results"})
 
     except sqlite3.Error as e:
-        error_msg = f"Query processing error: {str(e)}"
+        error_msg = f"Database error: {str(e)}"
         logger.error(error_msg, exc_info=True)
         return jsonify({"error": error_msg}), 200
     except Exception as e:

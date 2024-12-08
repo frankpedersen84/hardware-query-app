@@ -16,12 +16,11 @@ services:
       
       # Copy and verify Excel file
       echo "Copying hardware_data.xlsx..."
-      cp hardware_data.xlsx /opt/render/project/src/
-      if [ -f "/opt/render/project/src/hardware_data.xlsx" ]; then
-        echo "Excel file copied successfully"
-        ls -l /opt/render/project/src/hardware_data.xlsx
+      if [ -f "hardware_data.xlsx" ]; then
+        echo "Excel file exists in source"
+        ls -l hardware_data.xlsx
       else
-        echo "ERROR: Excel file copy failed"
+        echo "ERROR: Excel file not found in source"
         exit 1
       fi
       
@@ -71,7 +70,7 @@ services:
               return False
       
       if not check_database():
-          exit 1
+          exit(1)
       EOF
     startCommand: |
       echo "=== STARTING APPLICATION ==="
@@ -85,6 +84,3 @@ services:
         sync: false
       - key: RENDER
         value: true
-    assets:
-      - path: /opt/render/project/src/hardware.xlsx
-        source: C:/Users/Admin-Frankie/Desktop/hardware.xlsx
